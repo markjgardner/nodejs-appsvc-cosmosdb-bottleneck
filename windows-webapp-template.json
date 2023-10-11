@@ -136,6 +136,21 @@
             }
         },
         {
+          "type": "Microsoft.OperationalInsights/workspaces",
+          "apiVersion": "2021-12-01-preview",
+          "name": "[concat(parameters('webAppName'),'-workspace')]",
+          "location": "[resourceGroup().location]",
+          "properties": {
+            "sku": {
+              "name": "Free"
+            },
+            "retentionInDays": "30",
+            "workspaceCapping": {
+                "dailyQuotaGb": "2"
+            }
+          }
+        },
+        {
             "type": "Microsoft.Insights/components",
             "name": "[parameters('webAppName')]",
             "apiVersion": "2014-04-01",
@@ -145,7 +160,8 @@
             },
             "properties": {
                 "applicationId": "[parameters('webAppName')]",
-                "Request_Source": "AzureTfsExtensionAzureProject"
+                "Request_Source": "AzureTfsExtensionAzureProject",
+                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('webAppName'), '-workspace')]"
             }
         },
         {
