@@ -142,7 +142,7 @@
           "location": "[resourceGroup().location]",
           "properties": {
             "sku": {
-              "name": "Free"
+              "name": "PerGB2018"
             },
             "retentionInDays": "30",
             "workspaceCapping": {
@@ -158,6 +158,7 @@
             "tags": {
                 "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('webAppName'))]": "Resource"
             },
+            "dependsOn": ["[resourceId('Microsoft.OperationalInsights/workspaces', parameters('webAppName'), '-workspace')]"],
             "properties": {
                 "applicationId": "[parameters('webAppName')]",
                 "Request_Source": "AzureTfsExtensionAzureProject",
