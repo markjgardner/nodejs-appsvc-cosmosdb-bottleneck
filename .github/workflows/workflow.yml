@@ -7,6 +7,7 @@ on:
   push:
       branches:
         - main
+        - test
 
 env:
   AZURE_WEBAPP_NAME: "mjgloaddemo"    # set this to your application's name
