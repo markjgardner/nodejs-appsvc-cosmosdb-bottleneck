@@ -153,16 +153,16 @@
         {
             "type": "Microsoft.Insights/components",
             "name": "[parameters('webAppName')]",
-            "apiVersion": "2014-04-01",
+            "apiVersion": "2020-02-02",
             "location": "[parameters('appInsightsLocation')]",
             "tags": {
                 "[concat('hidden-link:', resourceGroup().id, '/providers/Microsoft.Web/sites/', parameters('webAppName'))]": "Resource"
             },
-            "dependsOn": ["[resourceId('Microsoft.OperationalInsights/workspaces', parameters('webAppName'), '-workspace')]"],
+            "dependsOn": ["[resourceId('Microsoft.OperationalInsights/workspaces', concat(parameters('webAppName'), '-workspace'))]"],
             "properties": {
                 "applicationId": "[parameters('webAppName')]",
                 "Request_Source": "AzureTfsExtensionAzureProject",
-                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', parameters('webAppName'), '-workspace')]"
+                "workspaceResourceId": "[resourceId('Microsoft.OperationalInsights/workspaces', concat(parameters('webAppName'), '-workspace'))]"
             }
         },
         {
