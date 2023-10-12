@@ -1,34 +1,19 @@
-# This is a basic workflow to help you get started with Actions
+name: Deployment Workflow
 
-name: Deploy and LoadTest
-
-# Controls when the workflow will run
 on:
   push:
       branches:
         - main
         - test
 
-env:
-  AZURE_WEBAPP_NAME: "mjgloaddemo"    # set this to your application's name
-  AZURE_WEBAPP_NAME_PROD: "mjgloaddemoprod"    # set this to your application's name
-  LOAD_TEST_RESOURCE: "mjgloaddemo-test"
-  LOAD_TEST_RESOURCE_GROUP: "mjgloaddemotest-rg"
-  AZURE_WEBAPP_PACKAGE_PATH: '.'      # set this to the path to your web app project, defaults to the repository root
-  NODE_VERSION: '14.15.1'                # set this to the node version to use
-  LOCATION: "westus3"
-  APPINSIGHTLOCATION: "westus3"
-  DATABASEACCOUNTLOCATION: "westus3"
-
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build-and-deploy:
-    # The type of runner that the job will run on
+    name: 'Build'
     runs-on: ubuntu-latest
+    environment: test
+    concurrency: test
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout GitHub Actions 
         uses: actions/checkout@v2
         
@@ -41,13 +26,16 @@ jobs:
       - name: 'Deploy to Azure WebApp'
         uses: azure/webapps-deploy@v2
         with: 
-          app-name: ${{ env.AZURE_WEBAPP_NAME }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          package: '.'
 
   loadTest:
-    name: Load Test
+    name: 'Load Test'
     needs: build-and-deploy
     runs-on: ubuntu-latest
+    environment: test
+    concurrency: test
+
     steps:
       - name: Checkout GitHub Actions 
         uses: actions/checkout@v2
@@ -61,36 +49,37 @@ jobs:
       - name: Create/Update Load Test
         uses: azure/arm-deploy@v1
         with:
-          resourceGroupName: ${{ env.LOAD_TEST_RESOURCE_GROUP }}
+          resourceGroupName: ${{ vars.LOAD_TEST_RESOURCE_GROUP }}
           template: ./ARMTemplate/template.json
-          parameters: ./ARMTemplate/parameters.json name=${{ env.LOAD_TEST_RESOURCE }} location="${{ env.LOCATION }}"
+          parameters: ./ARMTemplate/parameters.json name=${{ vars.LOAD_TEST_RESOURCE }} location="${{ vars.LOCATION }}"
           
       - name: 'Run Load Test'
         uses: azure/load-testing@v1
         with:
           loadTestConfigFile: 'SampleApp.yaml'
-          loadTestResource: ${{ env.LOAD_TEST_RESOURCE }}
-          resourceGroup: ${{ env.LOAD_TEST_RESOURCE_GROUP }}
+          loadTestResource: ${{ vars.LOAD_TEST_RESOURCE }}
+          resourceGroup: ${{ vars.LOAD_TEST_RESOURCE_GROUP }}
           env: |
             [
               {
               "name": "webapp",
-              "value": "${{ env.AZURE_WEBAPP_NAME }}.azurewebsites.net"
+              "value": "${{ vars.AZURE_WEBAPP_NAME }}.azurewebsites.net"
               }
             ]          
       
       - uses: actions/upload-artifact@v2
         with:
           name: loadTestResults
-          path: ${{ github.workspace }}/loadTest
+          path: ${{ github.workspace }}/loadTest/results.zip
 
   promote-to-prod:
-    # The type of runner that the job will run on
+    name: 'Deploy to Production'
+    needs: loadTest
     runs-on: ubuntu-latest
+    environment: production
+    concurrency: production
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout GitHub Actions 
         uses: actions/checkout@v2
         
@@ -103,5 +92,5 @@ jobs:
       - name: 'Deploy to Azure WebApp'
         uses: azure/webapps-deploy@v2
         with: 
-          app-name: ${{ env.AZURE_WEBAPP_NAME_PROD }}
-          package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}
+          app-name: ${{ vars.AZURE_WEBAPP_NAME }}
+          package: '.'
